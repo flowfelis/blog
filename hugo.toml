@@ -3,12 +3,99 @@ locale = 'en-us'
 title = 'Pythonflow'
 theme = 'nightfall'
 
+# ==========================================
+# 1. MARKDOWN SETTINGS
+# ==========================================
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      # Allows HTML to be rendered inside markdown files (useful for embedding things)
+      unsafe = true
+
+# ==========================================
+# 2. PAGINATION
+# ==========================================
+[pagination]
+  # Number of posts to show per page before adding "Next/Prev" links
+  pagerSize = 5
+
+# ==========================================
+# 3. NAVIGATION MENU
+# ==========================================
 [menu]
   [[menu.header]]
     name = "posts"
     weight = 0
     url = "/posts/"
+  
+  [[menu.header]]
+    name = "about"
+    weight = 1
+    url = "/about/"
 
+# ==========================================
+# 4. THEME PARAMETERS & TERMINAL SETTINGS
+# ==========================================
 [params]
-user = "alicanx"
-hostname = "pythonflow.com"
+  # Terminal prompt settings (renders as: user@hostname ~ $)
+  user = "flowfelis"
+  hostname = "pythonflow.com"
+
+  # Global link behavior
+  openLinksInNewTab = true
+
+  # Date format for posts (2006-01-02 is the magical Go date format string for YYYY-MM-DD)
+  displayDateFormat = "02-01-2006"
+
+  # Global metadata display settings for posts
+  # You can turn these on/off globally here, or override them in the frontmatter of specific posts
+  showMetadata = true       # Master switch for all metadata display
+  showPublishedDate = true  # Show published date on post page
+  showReadingTime = true    # Show reading time on post page
+  showTags = true           # Show tags on post page
+  showAuthors = true        # Show authors on post page
+  showCategories = true     # Show categories on post page
+
+# ==========================================
+# 5. AUTHOR PROFILE (HOMEPAGE)
+# ==========================================
+[params.author]
+  name = "flowfelis"
+  email = "alicandonmez90@gmail.com"
+  
+  # Set to true to show the avatar above the name, false to show it below
+  avatarFirst = true
+  
+  # URL to your avatar image. Can also be a local file if you place it in the static/ folder (e.g. "/avatar.png")
+  avatar = "me.jpg" 
+
+# ==========================================
+# 6. SOCIAL LINKS (HOMEPAGE)
+# ==========================================
+# You can add as many as you want. The 'name' must match a supported icon in the theme.
+[[params.social]]
+  key = 0
+  name = "github"
+  url = "https://github.com/flowfelis"
+  target = "_blank"
+  aria = "GitHub Profile"
+
+[[params.social]]
+  key = 1
+  name = "x"
+  url = "https://x.com/flowfelis"
+  target = "_blank"
+  aria = "X Profile"
+
+[[params.social]]
+  key = 2
+  name = "linkedin"
+  url = "https://linkedin.com/in/alicandonmez"
+  target = "_blank"
+  aria = "LinkedIn Profile"
+
+[[params.social]]
+  key = 3
+  name = "email"
+  url = "mailto:alicandonmez90@gmail.com"
+  aria = "My e-Mail Address"
