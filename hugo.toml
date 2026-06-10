@@ -10,5 +10,5 @@ theme = 'nightfall'
     url = "/posts/"
 
 [params]
-user = "alican"
+user = "alicanx"
 hostname = "pythonflow.com"
