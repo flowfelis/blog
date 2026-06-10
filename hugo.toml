@@ -1,0 +1,14 @@
+baseURL = 'https://pythonflow.com/'
+locale = 'en-us'
+title = 'Pythonflow'
+theme = 'nightfall'
+
+[menu]
+  [[menu.header]]
+    name = "posts"
+    weight = 0
+    url = "/posts/"
+
+[params]
+user = "puma"
+hostname = "pythonflow.com"
