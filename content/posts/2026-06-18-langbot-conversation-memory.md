@@ -77,9 +77,11 @@ Here is the Day 2 version of `langbot.py` with the changes highlighted:
 
 ```python
 # langbot.py — Day 2: Conversation memory added
-import os
+from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage
+
+load_dotenv()
 
 
 def main():
@@ -189,9 +191,11 @@ Here is the complete LangBot code at the end of Day 2:
 
 ```python
 # langbot.py — Day 2: Conversation memory added
-import os
+from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage
+
+load_dotenv()
 
 
 def main():
