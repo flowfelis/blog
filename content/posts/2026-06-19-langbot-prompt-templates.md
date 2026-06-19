@@ -2,7 +2,7 @@
 title: "LangBot Day 3: Giving Your Chatbot a Personality with Prompt Templates"
 date: 2026-06-19T07:00:00+01:00
 draft: false
-description: "LangBot gets a personality. Day 3 introduces ChatPromptTemplate, SystemMessage, and the LangChain Expression Language (LCEL) — turning a bland bot into a witty assistant."
+description: "LangBot gets a personality. Day 3 introduces ChatPromptTemplate and SystemMessage — separating what the bot says from how it behaves."
 tags:
   - python
   - langchain
@@ -12,7 +12,6 @@ tags:
   - prompt-templates
   - chatprompttemplate
   - system-message
-  - lcel
 categories:
   - tutorials
 series: ["LangBot: Build a Chatbot with LangChain"]
@@ -25,7 +24,7 @@ slug: "langbot-day-3-prompt-templates"
 
 ## The problem: a chatbot with no identity
 
-Right now, LangBot's response to *any* first message is unpredictable. Ask "What do you do?" and you get whatever the base model(OpenAI gpt in our case) decides. There is no way to control:
+Right now, LangBot's response to *any* first message is unpredictable. Ask "What do you do?" and you get whatever the base model decides. There is no way to control:
 
 - **Tone** — friendly? formal? sarcastic?
 - **Behavior** — concise or verbose? does it use emojis? does it admit when it doesn't know something?
@@ -43,7 +42,7 @@ LangChain provides three message types for building prompt templates:
 | `HumanMessage` | The user's input. Can include variable placeholders like `{input}`. |
 | `AIMessage` | The model's previous responses. Used for conversation history. |
 
-A `ChatPromptTemplate` combines these into a reusable template that produces the message list the model sees.
+A `ChatPromptTemplate` combines these into a reusable template. Instead of manually building a message list every time, you define the structure once and fill it with variables at runtime.
 
 Here is the new code we are adding today:
 
@@ -61,19 +60,20 @@ prompt = ChatPromptTemplate.from_messages([
     MessagesPlaceholder(variable_name="history"),
     ("human", "{input}"),
 ])
+
+# Use it: fill the template, then send to the model
+formatted_messages = prompt.invoke({
+    "input": user_input,
+    "history": messages,
+})
+response = llm.invoke(formatted_messages)
 ```
 
-Then we use LCEL (LangChain Expression Language) to chain the prompt to the model:
+Three things happening:
 
-```python
-chain = prompt | llm
-```
-
-Instead of calling `llm.invoke(messages)` directly, we call `chain.invoke({"input": user_input, "history": messages})`. The chain:
-
-1. Formats the prompt — injects the system message, attaches the history, and slots in the user input
-2. Passes the result to `llm.invoke()`
-3. Returns the `AIMessage` response
+1. **The template defines the structure** — system message first, then conversation history, then the user's latest input.
+2. **`prompt.invoke()` fills the variables** — replaces `{input}` with the user's text and `{history}` with the message list. Returns a `ChatPromptValue` (which behaves like a list of messages).
+3. **`llm.invoke()` processes the result** — same `llm.invoke()` we have used since Day 1. The template produces the message list, the model produces the response.
 
 ## Where it plugs in
 
@@ -103,9 +103,6 @@ under three sentences. If you don't know something, you admit it with style."""
         ("human", "{input}"),
     ])
 
-    # 🆕 Day 3: Create a chain using LCEL (pipe syntax)
-    chain = prompt | llm
-
     # Day 2: Conversation history
     messages = []
 
@@ -122,8 +119,12 @@ under three sentences. If you don't know something, you admit it with style."""
         if not user_input:
             continue
 
-        # 🆕 Day 3: Invoke the chain instead of the raw LLM
-        response = chain.invoke({"input": user_input, "history": messages})
+        # 🆕 Day 3: Format the prompt template, then send to model
+        formatted_messages = prompt.invoke({
+            "input": user_input,
+            "history": messages,
+        })
+        response = llm.invoke(formatted_messages)
 
         # Day 2: Record the exchange in history
         messages.append(HumanMessage(content=user_input))
@@ -138,17 +139,25 @@ if __name__ == "__main__":
 
 ## What changed — line by line
 
-**Lines 4 and 27-31 — the prompt template.** We import `ChatPromptTemplate` and `MessagesPlaceholder`, then define a template with three slots:
+**Lines 4 and 10-15 — the prompt template.** We import `ChatPromptTemplate` and `MessagesPlaceholder`, then define a template with three slots:
 
 1. `("system", SYSTEM_PROMPT)` — a static `SystemMessage` that sets the bot's personality. This is always the first thing the model sees.
 2. `MessagesPlaceholder(variable_name="history")` — a dynamic slot where the conversation transcript gets injected at runtime. This is how Day 2's `messages` list connects to the template.
 3. `("human", "{input}")` — a `HumanMessage` template with a `{input}` placeholder that gets replaced by the user's actual text.
 
-**Line 34 — the LCEL chain.** `prompt | llm` uses the pipe operator (`|`) to connect the prompt template to the model. This is LCEL: every component is a Runnable, and `|` chains them left to right. The output of `prompt` becomes the input of `llm`.
+**Lines 39-42 — formatting and invoking.** Instead of calling `llm.invoke(messages)` directly like on Day 2, we first run the user input and history through the prompt template:
 
-**Line 50 — invoking the chain.** Instead of `llm.invoke(messages)`, we call `chain.invoke({"input": user_input, "history": messages})`. The dictionary keys match the placeholder names in the template.
+```python
+formatted_messages = prompt.invoke({
+    "input": user_input,
+    "history": messages,
+})
+response = llm.invoke(formatted_messages)
+```
 
-**Lines 53-54 — history recording moved.** We push `HumanMessage` and `AIMessage` onto the `messages` list *after* the chain call, so the history reflects what was actually sent and received.
+The dictionary keys (`"input"` and `"history"`) must match the placeholder names in the template. `prompt.invoke()` produces a `ChatPromptValue` — which acts like a list of messages and can be passed directly to `llm.invoke()`.
+
+**Lines 45-46 — history recording stays the same.** As on Day 2, we push `HumanMessage` and `AIMessage` onto the `messages` list after the call, so they feed into the next turn.
 
 ## Try it now
 
@@ -202,35 +211,16 @@ Templates support variables. You can inject the current date, the user's name, o
 
 ```python
 prompt = ChatPromptTemplate.from_messages([
-    ("system", "You are an assistant. Today is {today}."),
+    ("system", "You are an assistant. Today is {today}. The user's name is {name}."),
     ("human", "{input}"),
 ])
-chain = prompt | llm
-response = chain.invoke({"input": "What day is it?", "today": "Thursday"})
+formatted = prompt.invoke({
+    "input": "What day is it?",
+    "today": "Thursday",
+    "name": "Alex",
+})
+response = llm.invoke(formatted)
 ```
-
-## A quick look at LCEL
-
-The pipe operator you just used — `prompt | llm` — is the LangChain Expression Language. It is not just syntactic sugar. Every `|` creates a `RunnableSequence` that LangChain can:
-
-- **Stream** token-by-token with `.stream()` (coming in a future post)
-- **Batch** across multiple inputs with `.batch()`
-- **Trace** end-to-end with LangSmith
-- **Deploy** as a single endpoint with LangServe
-
-The chain you wrote today — `prompt | llm` — is the simplest possible LCEL chain. Later we will extend it:
-
-```python
-chain = prompt | llm | StrOutputParser()   # Day 4
-chain = prompt | llm | parser               # Day 5 (structured output)
-chain = retriever | prompt | llm            # Day 8 (RAG)
-```
-
-Each component is a Lego brick, and `|` snaps them together.
-
-> Don't worry if you haven't wrapped your head around ChatPromptTemplate and LCEL.
-That's completely normal. I will explain those in more detail in the upcoming tutorials.
-For now, it's enough to understand the high level basics.
 
 ## What we have so far
 
@@ -238,13 +228,12 @@ Here is the complete LangBot code at the end of Day 3:
 
 ```python
 # langbot.py — Day 3: Prompt templates and system message
-from dotenv import load_dotenv
+from dotenv import load_dotenv()
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 load_dotenv()
-
 
 def main():
     llm = ChatOpenAI(model="gpt-4.1-mini", temperature=0.7)
@@ -260,9 +249,6 @@ under three sentences. If you don't know something, you admit it with style."""
         MessagesPlaceholder(variable_name="history"),
         ("human", "{input}"),
     ])
-
-    # Day 3: Create a chain using LCEL (pipe syntax)
-    chain = prompt | llm
 
     # Day 2: Conversation history
     messages = []
@@ -280,8 +266,12 @@ under three sentences. If you don't know something, you admit it with style."""
         if not user_input:
             continue
 
-        # Day 3: Invoke the chain instead of the raw LLM
-        response = chain.invoke({"input": user_input, "history": messages})
+        # Day 3: Format the prompt template, then send to model
+        formatted_messages = prompt.invoke({
+            "input": user_input,
+            "history": messages,
+        })
+        response = llm.invoke(formatted_messages)
 
         # Day 2: Record the exchange in history
         messages.append(HumanMessage(content=user_input))
@@ -300,11 +290,11 @@ Before tomorrow, experiment with the system prompt:
 
 - **Change the personality.** Make LangBot a formal Victorian butler, a pirate, or a therapist. Observe how the same user input produces wildly different responses.
 - **Add constraints.** Try `"Never use the word 'the'"` or `"Always respond in exactly two sentences."` — see how well the model follows the rules.
-- **Inject runtime data.** Add a `{username}` variable to the system prompt and pass a name when calling `chain.invoke()`.
-- **Watch the history.** Add `print(f"[HISTORY] {len(messages)} messages")` before the `.invoke()` call to see the transcript grow.
+- **Inject runtime data.** Add a `{username}` variable to the system prompt and pass a name when calling `prompt.invoke()`.
+- **Watch the history.** Add `print(f"[HISTORY] {len(messages)} messages")` before `prompt.invoke()` to see the transcript grow.
 
 ## Coming tomorrow
 
-LangBot has a personality now, but the response is still a raw `AIMessage` object — we extract `.content` manually. Tomorrow we add an **output parser** with `StrOutputParser` and explore how LCEL chains make this trivial: `prompt | llm | StrOutputParser()`. Then we will go a step further and turn the response into **structured output using Pydantic** — so LangBot can return typed data, not just strings.
+LangBot has a personality now, but calling `prompt.invoke()` then `llm.invoke()` as two separate steps is slightly verbose. Tomorrow we introduce **LCEL (LangChain Expression Language)** — the `|` syntax that lets you write `prompt | llm` and turn two steps into one clean chain.
 
 See you then.
