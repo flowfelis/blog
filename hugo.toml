@@ -82,10 +82,10 @@ theme = 'nightfall'
 
 [[params.social]]
   key = 1
-  name = "x"
-  url = "https://x.com/flowfelis"
+  name = "substack"
+  url = "https://substack.com/@pythonflow"
   target = "_blank"
-  aria = "X Profile"
+  aria = "My Substack"
 
 [[params.social]]
   key = 2
@@ -99,3 +99,10 @@ theme = 'nightfall'
   name = "email"
   url = "mailto:alicandonmez90@gmail.com"
   aria = "My e-Mail Address"
+
+[[params.social]]
+  key = 4
+  name = "x"
+  url = "https://x.com/flowfelis"
+  target = "_blank"
+  aria = "X Profile"
