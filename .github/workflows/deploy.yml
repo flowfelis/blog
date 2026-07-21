@@ -16,7 +16,7 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd /home/ubuntu/Projects/blog
+            cd /root/Projects/blog
             git pull origin main
             git submodule update --init --recursive
             hugo
